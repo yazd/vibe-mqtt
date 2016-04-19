@@ -518,19 +518,16 @@ final:
     body
     {
         import vibe.core.log: logError;
+        import std.algorithm: min;
 
         version(MqttDebug) logDebug("MQTT Entering listening loop");
 
-        while (_con.connected)
+        ubyte[512] buffer;
+        while (_con.connected && !_con.empty)
         {
-            auto size = cast(uint)_con.leastSize;
-            if (size > 0)
-            {
-                ubyte[] data = new ubyte[](size);
-                
-                _con.read(data);
-                proccessData(data);
-            }
+            auto chunkSize = min(_con.leastSize, buffer.length);
+            _con.read(buffer[0 .. chunkSize]);
+            proccessData(buffer[0 .. chunkSize]);
         }
 
         version(MqttDebug) logDebug("MQTT Exiting listening loop");
